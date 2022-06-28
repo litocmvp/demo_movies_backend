@@ -1,0 +1,6 @@
+venv
+movies.db
+migrations
+*/.pyc
+*/.env
+*/__pycache__
