@@ -1,4 +1,4 @@
-from flask import request, jsonify, current_app
+from flask import request, jsonify, current_app, abort
 from sqlalchemy.exc import IntegrityError
 from werkzeug.security import generate_password_hash, check_password_hash
 from app.db import db, BaseModelMixin
@@ -64,17 +64,20 @@ class UserModel(db.Model, BaseModelMixin):
 		@wraps(f)
 		def decorator(*args, **kwargs):
 			token = None
-			if 'x-access-tokens' in request.headers:
-				token = request.headers['x-access-tokens']
+
+			if 'Authorization' in request.headers:
+				token = request.headers['Authorization'][7:]
 
 			if not token:
-				return jsonify({'mensaje': 'Falta un token valido'})
+				return abort(403)
+				return jsonify({'icon':'warning', 'msg': 'Falta un token valido'})
 
 			try:
 				data = jwt.decode(token, current_app.config["SECRET_KEY"], algorithms=["HS256"])
 				current_user = UserModel.query.filter_by(public_id=data['public_id']).first()
 			except:
-				return jsonify({'mensaje': 'Token invalido'})
+				return abort(403)
+				return jsonify({'icon':'warning', 'msg': 'Token invalido'})
 
 			return f(current_user, *args, **kwargs)
 		return decorator
@@ -147,12 +150,16 @@ class GenderModel(db.Model, BaseModelMixin):
 
 	id = db.Column(db.Integer, primary_key=True)
 	gender = db.Column(db.String, nullable=False)
+	description = db.Column(db.String, nullable=False)
+	picture = db.Column(db.String, nullable=False)
 
 	film_gender_relation = db.relationship('GenderFilmModel', backref='generos', lazy=True,
 									cascade="all, delete", passive_deletes=True)
 
-	def __init__(self, gender):
+	def __init__(self, gender, description, picture):
 		self.gender = gender
+		self.description = description
+		self.picture = picture
 
 	def __repr__(self):
 		return f"Gender ({self.gender})"
@@ -190,12 +197,16 @@ class RatingModel(db.Model, BaseModelMixin):
 
 	id = db.Column(db.Integer, primary_key=True)
 	rating = db.Column(db.String, nullable=False)
+	description = db.Column(db.String, nullable=False)
+	picture = db.Column(db.String, nullable=False)
 
 	film_relation = db.relationship('FilmModel', backref='clasificaciones', lazy=True,
 									cascade="all, delete", passive_deletes=True)
 
-	def __init__(self, rating):
+	def __init__(self, rating, description, picture):
 		self.rating = rating
+		self.description = description
+		self.picture = picture
 
 	def __repr__(self):
 		return f"Rating ({self.rating})"

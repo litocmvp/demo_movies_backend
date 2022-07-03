@@ -22,8 +22,11 @@ class FilmSchema(ma.Schema):
 class GenderSchema(ma.Schema):
     id = fields.Integer(dump_only=True)
     gender = fields.String()
+    description = fields.String()
+    picture = fields.String()
 
 class RatinSchema(ma.Schema):
     id = fields.Integer(dump_only=True)
     rating = fields.String()
-    
+    description = fields.String()
+    picture = fields.String()
