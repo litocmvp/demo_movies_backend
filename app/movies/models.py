@@ -167,6 +167,10 @@ class GenderModel(db.Model, BaseModelMixin):
 	def __str__(self):
 		return f"{self.gender}"
 
+	def update(id, title, description, picture):
+		GenderModel.query.filter_by(id=id).update(dict(gender=title, description=description, picture=picture))
+		db.session.commit()
+
 class GenderFilmModel(db.Model, BaseModelMixin):
 	""" Modelo para la tabla de Generos de Peliculas"""
 
@@ -213,3 +217,7 @@ class RatingModel(db.Model, BaseModelMixin):
 
 	def __str__(self):
 		return f"{self.rating}"
+
+	def update(id, title, description, picture):
+		RatingModel.query.filter_by(id=id).update(dict(rating=title, description=description, picture=picture))
+		db.session.commit()

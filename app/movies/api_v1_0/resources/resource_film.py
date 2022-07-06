@@ -28,6 +28,21 @@ class RatingResource(Resource):
         new_rating.save()
         resp = rating_schema.dump(new_rating)
         return {'icon':'success', 'msg': 'Registro Exitoso' ,'record': resp}, 201
+    @UserModel.token_required
+    def put(current_user, self, id):
+        if not current_user.admin : return abort(403)
+        data = request.get_json()
+        rating_dict = rating_schema.load(data)
+        RatingModel.update(id, rating_dict['rating'], rating_dict['description'], rating_dict['picture'])
+        old_rating = RatingModel.get_by_id(id)
+        resp = rating_schema.dump(old_rating)
+        return {'icon':'success', 'msg': 'Actualización Exitosa' ,'record': resp}, 201
+    @UserModel.token_required
+    def delete(current_user, self, id):
+        if not current_user.admin : return abort(403)
+        delete_record = RatingModel.get_by_id(id)
+        delete_record.delete()
+        return {'icon':'warning', 'msg': 'Eliminación Exitosa'}, 201
 
 class GenderListResource(Resource):
     @UserModel.token_required
@@ -48,6 +63,21 @@ class GenderResource(Resource):
         new_gender.save()
         resp = gender_schema.dump(new_gender)
         return {'icon':'success', 'msg': 'Registro Exitoso' ,'record': resp}, 201
+    @UserModel.token_required
+    def put(current_user, self, id):
+        if not current_user.admin : return abort(403)
+        data = request.get_json()
+        gender_dict = gender_schema.load(data)
+        GenderModel.update(id, gender_dict['rating'], gender_dict['description'], gender_dict['picture'])
+        old_gender = GenderModel.get_by_id(id)
+        resp = gender_schema.dump(old_gender)
+        return {'icon':'success', 'msg': 'Actualización Exitosa' ,'record': resp}, 201
+    @UserModel.token_required
+    def delete(current_user, self, id):
+        if not current_user.admin : return abort(403)
+        delete_record = GenderModel.get_by_id(id)
+        delete_record.delete()
+        return {'icon':'warning', 'msg': 'Eliminación Exitosa'}, 201
 
 api.add_resource(RatingListResource, '/api/v1.0/cinema/ratings')
 api.add_resource(RatingResource, '/api/v1.0/cinema/rating', '/api/v1.0/cinema/rating/<int:id>')
