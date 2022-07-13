@@ -1,4 +1,4 @@
-from marshmallow import fields
+from marshmallow import fields, EXCLUDE
 
 from app.ext import ma
 
@@ -10,14 +10,18 @@ class UserSchema(ma.Schema):
     admin = fields.Boolean()
 
 class FilmSchema(ma.Schema):
+    class Meta:
+        unknown = EXCLUDE
     id = fields.Integer(dump_only=True)
     title = fields.String()
-    clasif = fields.String()
-    gender = fields.Nested('GenderSchema', many=True)
+    rating = fields.Integer()
+    gender = fields.Nested('GenderSchema', many=True, dump_only=True)
     year = fields.Integer()
     synopsis = fields.String()
-    duration = fields.Time()
-    user = fields.Integer()
+    duration = fields.String()
+    picture = fields.String()
+    preview = fields.String()
+    user = fields.Integer(dump_only=True)
 
 class GenderSchema(ma.Schema):
     id = fields.Integer(dump_only=True)

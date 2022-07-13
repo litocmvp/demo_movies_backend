@@ -112,6 +112,11 @@ class ResetPwdModel(db.Model):
 		ResetPwdModel.query.filter_by(user=user).delete()
 		db.session.commit()
 
+GenderFilmModel = db.Table('generos_en_peliculas',
+	db.Column('gender', db.Integer, db.ForeignKey('generos.id', ondelete='CASCADE'), nullable=False),
+	db.Column('film', db.Integer, db.ForeignKey('peliculas.id', ondelete='CASCADE'), nullable=False)
+)
+
 class FilmModel(db.Model, BaseModelMixin):
 	""" Modelo para la tabla de Peliculas """
 
@@ -119,29 +124,41 @@ class FilmModel(db.Model, BaseModelMixin):
 
 	id = db.Column(db.Integer, primary_key=True)
 	title = db.Column(db.String(90), nullable=False)
-	clasific = db.Column(db.Integer, db.ForeignKey('clasificaciones.id',
+	rating = db.Column(db.Integer, db.ForeignKey('clasificaciones.id',
 													ondelete='CASCADE'),
 													nullable=False) # Fk solped)
 	year = db.Column(db.Integer, nullable=False)
 	synopsis = db.Column(db.String(255), nullable=False)
-	duration = db.Column(db.Time, nullable=True)
+	duration = db.Column(db.String, nullable=True)
+	picture = db.Column(db.String, nullable=False)
+	preview = db.Column(db.String, nullable=True)
 	useradd =  db.Column(db.Integer, db.ForeignKey('usuarios.id',
 													ondelete='CASCADE'),
 													nullable=False) # Fk solped)
 
-	def __init__(self, title, clasif, year, sypnopsis, duration, user):
+	gender = db.relationship('GenderModel', secondary=GenderFilmModel, backref='films', lazy=True,
+									cascade="all, delete", passive_deletes=True)
+
+	def __init__(self, title, rating, year, synopsis, duration, picture, preview, useradd):
 		self.title = title
-		self.clasific = clasif
+		self.rating = rating
 		self.year = year
-		self.synopsis = sypnopsis
+		self.synopsis = synopsis
 		self.duration = duration
-		self.user = user
+		self.picture = picture
+		self.preview = preview
+		self.useradd = useradd
 
 	def __repr__(self):
 		return f"Film ({self.title})"
 
 	def __str__(self):
 		return f"{self.title}"
+
+	def update(id, title, rating, year, synopsis, duration, picture, preview):
+		FilmModel.query.filter_by(id=id).update(dict(title=title, rating=rating, year=year,
+			synopsis=synopsis, duration=duration, picture=picture, preview=preview))
+		db.session.commit()
 
 class GenderModel(db.Model, BaseModelMixin):
 	""" Modelo para la tabla de Generos """
@@ -152,9 +169,6 @@ class GenderModel(db.Model, BaseModelMixin):
 	gender = db.Column(db.String, nullable=False)
 	description = db.Column(db.String, nullable=False)
 	picture = db.Column(db.String, nullable=False)
-
-	film_gender_relation = db.relationship('GenderFilmModel', backref='generos', lazy=True,
-									cascade="all, delete", passive_deletes=True)
 
 	def __init__(self, gender, description, picture):
 		self.gender = gender
@@ -170,29 +184,6 @@ class GenderModel(db.Model, BaseModelMixin):
 	def update(id, title, description, picture):
 		GenderModel.query.filter_by(id=id).update(dict(gender=title, description=description, picture=picture))
 		db.session.commit()
-
-class GenderFilmModel(db.Model, BaseModelMixin):
-	""" Modelo para la tabla de Generos de Peliculas"""
-
-	__tablename__ = 'generos_en_peliculas'
-
-	id = db.Column(db.Integer, primary_key=True)
-	gender = db.Column(db.Integer, db.ForeignKey('generos.id',
-													ondelete='CASCADE'),
-													nullable=False) # Fk solped)
-	film = db.Column(db.Integer, db.ForeignKey('peliculas.id',
-													ondelete='CASCADE'),
-													nullable=False) # Fk solped)
-
-	def __init__(self, gender, film):
-		self.gender = gender
-		self.film = film
-
-	def __repr__(self):
-		return f"Film ({self.film}) Gender ({self.gender})"
-
-	def __str__(self):
-		return f"{self.gender}"
 
 class RatingModel(db.Model, BaseModelMixin):
 	""" Modelo para la tabla de Clasificaciones"""
