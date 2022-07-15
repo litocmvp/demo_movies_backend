@@ -82,6 +82,22 @@ class MovieListResource(Resource):
         movies = FilmModel.get_all()
         resp = movie_schema.dump(movies, many=True)
         return resp, 201
+    def post(self):
+        data = request.get_json()
+        movies = []
+        key = list(data.items())[0][0]
+        kwargs = {key: data[key]}
+        if not key in ['title','gender']:
+            movies = FilmModel.simple_filter(**kwargs)
+        elif 'title' in key:
+            movies = db.session.execute(f"SELECT * FROM peliculas WHERE title LIKE '%{data[key]}%'")
+        else:
+            list_movies = db.session.execute(f"SELECT * FROM generos_en_peliculas WHERE gender={data[key]}")
+            for film in list_movies:
+                movie = FilmModel.get_by_id(film.film)
+                movies.append(movie)
+        resp = movie_schema.dump(movies, many=True)
+        return resp, 201
 
 class MovieResource(Resource):
     @UserModel.token_required
@@ -125,6 +141,7 @@ class MovieResource(Resource):
         movie = FilmModel.get_by_id(id)
         if not movie.useradd == current_user.id : return abort(403)
         movie.delete()
+        db.session.execute(f"DELETE FROM generos_en_peliculas WHERE film ={id}") # Delete old movie
         return {'icon':'warning', 'msg': 'Eliminación Exitosa'}, 201
 
 api.add_resource(RatingListResource, '/api/v1.0/cinema/ratings')
