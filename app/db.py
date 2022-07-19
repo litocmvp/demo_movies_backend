@@ -24,3 +24,7 @@ class BaseModelMixin:
     @classmethod
     def simple_filter(cls, **kwargs):
         return cls.query.filter_by(**kwargs).all()
+
+    @classmethod
+    def paginate_filter(cls, page, **kwargs):
+        return cls.query.filter_by(**kwargs).paginate(page=page, per_page=20, error_out=False)

@@ -85,19 +85,29 @@ class MovieListResource(Resource):
     def post(self):
         data = request.get_json()
         movies = []
-        key = list(data.items())[0][0]
+        key = list(data.items())[1][0]
         kwargs = {key: data[key]}
-        if not key in ['title','gender']:
-            movies = FilmModel.simple_filter(**kwargs)
+        prev = False
+        next = False
+        if not key in ['title','gender']: # key is year or rating
+            movies = FilmModel.paginate_filter(data['page'], **kwargs)
+            if movies.has_next: next = True
+            if movies.has_prev: prev = True
+            movies = movies.items
         elif 'title' in key:
-            movies = db.session.execute(f"SELECT * FROM peliculas WHERE title LIKE '%{data[key]}%'")
+            movies = FilmModel.query.filter(FilmModel.title.like(f"%{data[key]}%")).paginate(page=data['page'], per_page=20, error_out=False)
+            if movies.has_next: next = True
+            if movies.has_prev: prev = True
+            movies = movies.items
         else:
-            list_movies = db.session.execute(f"SELECT * FROM generos_en_peliculas WHERE gender={data[key]}")
-            for film in list_movies:
+            list_movies = db.session.query(GenderFilmModel).filter(GenderFilmModel.c.gender==data[key]).paginate(page=data['page'], per_page=20, error_out=False)
+            if list_movies.has_next: next = True
+            if list_movies.has_prev: prev = True
+            for film in list_movies.items:
                 movie = FilmModel.get_by_id(film.film)
                 movies.append(movie)
         resp = movie_schema.dump(movies, many=True)
-        return resp, 201
+        return {'movies':resp, 'preview': prev, 'next': next}, 201
 
 class MovieResource(Resource):
     @UserModel.token_required
