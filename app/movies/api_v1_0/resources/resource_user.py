@@ -23,9 +23,9 @@ class UserResource(Resource):
     def post(self):
         data = request.get_json()
         # Reseteo de Password
-        if 'reset_pwd' in data:
+        if 'reset_pwd' in data and data['reset_pwd']:
             # Generar Código
-            if len(data['code']) == 0:
+            if len(str(data['code'])) == 0:
                 user_model = UserModel.query.filter_by(user= data['user']).first()
                 if not user_model is None:
                     pre_code = ResetPwdModel.query.filter_by(user=user_model.id).first()
@@ -40,7 +40,7 @@ class UserResource(Resource):
                             registro.save()
                             emisor = current_app.config['DONT_REPLY_FROM_EMAIL']
                             asunto = f"Solicitud de cambio de contraseña en el sitio web ({current_app.config['URL_INITIAL']})"
-                            cuerpo = f"Su código de verificación para modificar su contraseña de usuario es: <strong>{registro.code}</strong>, el cual tendrá validez de <strong>30 minustos</strong>, a partir de la emisión de este correo.<br><br>Si usted no solicitó este código, le pedimos por favor que ignore este correo.<br><br><br>Att. <strong>CMVP - Soporte Técnico</strong><br><br><br><p><small><strong>Nota:</strong> Este correo no recibe correos entrantes. Por favor no responda a este correo.</small></p>"
+                            cuerpo = f"Su código de verificación para modificar su contraseña de usuario es: <strong>{registro.code}</strong>, el cual tendrá validez de <strong>30 minutos</strong>, a partir de la emisión de este correo.<br><br>Si usted no solicitó este código, le pedimos por favor que ignore este correo.<br><br><br>Att. <strong>CMVP - Soporte Técnico</strong><br><br><br><p><small><strong>Nota:</strong> Este correo no recibe correos entrantes. Por favor no responda a este correo.</small></p>"
                             enviar_email = send_email(subject=asunto, sender=emisor, recipients=[user_model.user], text_body='', html_body=cuerpo)
                             if enviar_email:
                                 msg='Solicitud exitosa, por favor revisé su correo.'
@@ -51,7 +51,7 @@ class UserResource(Resource):
                         registro.save()
                         emisor = current_app.config['DONT_REPLY_FROM_EMAIL']
                         asunto = f"Solicitud de cambio de contraseña en el sitio web ({current_app.config['URL_INITIAL']})"
-                        cuerpo = f"Su código de verificación para modificar su contraseña de usuario es: <strong>{registro.code}</strong>, el cual tendrá validez de <strong>30 minustos</strong>, a partir de la emisión de este correo.<br><br>Si usted no solicitó este código, le pedimos por favor que ignore este correo.<br><br><br>Att. <strong>CMVP - Soporte Técnico</strong><br><br><br><p><small><strong>Nota:</strong> Este correo no recibe correos entrantes. Por favor no responda a este correo.</small></p>"
+                        cuerpo = f"Su código de verificación para modificar su contraseña de usuario es: <strong>{registro.code}</strong>, el cual tendrá validez de <strong>30 minutos</strong>, a partir de la emisión de este correo.<br><br>Si usted no solicitó este código, le pedimos por favor que ignore este correo.<br><br><br>Att. <strong>CMVP - Soporte Técnico</strong><br><br><br><p><small><strong>Nota:</strong> Este correo no recibe correos entrantes. Por favor no responda a este correo.</small></p>"
                         enviar_email = send_email(subject=asunto, sender=emisor, recipients=[user_model.user], text_body='', html_body=cuerpo)
                         if enviar_email:
                             msg='Solicitud exitosa, por favor revisé su correo.'
@@ -65,7 +65,8 @@ class UserResource(Resource):
                 if not user_model is None:
                     code = ResetPwdModel.query.filter_by(user=user_model.id).first()
                     if not code is None:
-                        if str(code.code) == data['code']:
+                        print(data)
+                        if code.code == data['code']:
                             return {'msg': 'Verificación de código exitosa', 'icon': 'success', 'auth': True}, 200
                         else:
                             return {'msg': 'Verificación de código erroneo', 'icon': 'error', 'auth': False}, 200
@@ -74,12 +75,12 @@ class UserResource(Resource):
                 else:
                     return {'msg': 'Usuario no encontrado', 'icon': 'error', 'auth': False}, 200
             # Cambio de Contraseña:
-            elif len(data['code']) != 0 and len(data['pwd']) > 5:
+            elif len(str(data['code'])) != 0 and len(data['pwd']) > 5:
                 user_model = UserModel.query.filter_by(user= data['user']).first()
                 if not user_model is None:
                     code = ResetPwdModel.query.filter_by(user=user_model.id).first()
                     if not code is None:
-                        if str(code.code) == data['code']:
+                        if code.code == data['code']:
                             UserModel.new_password(user_model.id, data['pwd'])
                             ResetPwdModel.delete(user_model.id)
                             return {'msg': 'Actualización de datos exitosa', 'icon': 'success', 'auth': True}, 200
@@ -91,6 +92,7 @@ class UserResource(Resource):
                     return {'msg': 'Usuario no encontrado', 'icon': 'error', 'auth': False}, 200
             else:
                 return abort(403)
+
 
 class Auth(Resource):
     def get(self):
