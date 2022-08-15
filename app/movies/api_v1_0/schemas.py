@@ -20,7 +20,6 @@ class FilmSchema(ma.Schema):
     synopsis = fields.String()
     duration = fields.String()
     picture = fields.String()
-    preview = fields.String()
     user = fields.Integer(dump_only=True)
 
 class GenderSchema(ma.Schema):

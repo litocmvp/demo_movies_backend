@@ -122,7 +122,7 @@ class MovieResource(Resource):
         new_movie = FilmModel(title = movie_dict['title'], rating = movie_dict['rating'],
                                 year = movie_dict['year'], synopsis = movie_dict['synopsis'],
                                 duration = movie_dict['duration'], picture = movie_dict['picture'],
-                                preview = movie_dict['preview'], useradd = current_user.id)
+                                useradd = current_user.id)
         new_movie.save()
         for gender in data['gender']:
             search_gender = GenderModel.get_by_id(gender)
@@ -137,7 +137,7 @@ class MovieResource(Resource):
         data = request.get_json()
         movie_dict = movie_schema.load(data)
         FilmModel.update(id, movie_dict['title'], movie_dict['rating'], movie_dict['year'],
-            movie_dict['synopsis'], movie_dict['duration'], movie_dict['picture'], movie_dict['preview'])
+            movie_dict['synopsis'], movie_dict['duration'], movie_dict['picture'])
         db.session.execute(f"DELETE FROM generos_en_peliculas WHERE film ={id}") # Delete old Genders
         modified_film = FilmModel.get_by_id(id)
         for gender in data['gender']: # Modify Genders

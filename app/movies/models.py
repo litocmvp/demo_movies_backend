@@ -131,7 +131,6 @@ class FilmModel(db.Model, BaseModelMixin):
 	synopsis = db.Column(db.String(255), nullable=False)
 	duration = db.Column(db.String, nullable=True)
 	picture = db.Column(db.String, nullable=False)
-	preview = db.Column(db.String, nullable=True)
 	useradd =  db.Column(db.Integer, db.ForeignKey('usuarios.id',
 													ondelete='CASCADE'),
 													nullable=False) # Fk solped)
@@ -139,14 +138,13 @@ class FilmModel(db.Model, BaseModelMixin):
 	gender = db.relationship('GenderModel', secondary=GenderFilmModel, backref='films', lazy=True,
 									cascade="all, delete", passive_deletes=True)
 
-	def __init__(self, title, rating, year, synopsis, duration, picture, preview, useradd):
+	def __init__(self, title, rating, year, synopsis, duration, picture, useradd):
 		self.title = title
 		self.rating = rating
 		self.year = year
 		self.synopsis = synopsis
 		self.duration = duration
 		self.picture = picture
-		self.preview = preview
 		self.useradd = useradd
 
 	def __repr__(self):
@@ -155,9 +153,9 @@ class FilmModel(db.Model, BaseModelMixin):
 	def __str__(self):
 		return f"{self.title}"
 
-	def update(id, title, rating, year, synopsis, duration, picture, preview):
+	def update(id, title, rating, year, synopsis, duration, picture):
 		FilmModel.query.filter_by(id=id).update(dict(title=title, rating=rating, year=year,
-			synopsis=synopsis, duration=duration, picture=picture, preview=preview))
+			synopsis=synopsis, duration=duration, picture=picture))
 		db.session.commit()
 
 class GenderModel(db.Model, BaseModelMixin):
