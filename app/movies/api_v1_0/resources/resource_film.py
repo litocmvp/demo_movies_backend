@@ -2,7 +2,8 @@ from app.db import db
 from . import api
 from ..schemas import FilmSchema, GenderSchema, RatinSchema
 from ...models import UserModel, FilmModel, GenderModel, GenderFilmModel, RatingModel
-from flask import request, abort
+from ....common.error_handling import ObjectNotFound, ObjectForbidden
+from flask import request
 from flask_restful import Resource
 
 movie_schema = FilmSchema()
@@ -18,7 +19,8 @@ class RatingListResource(Resource):
 class RatingResource(Resource):
     @UserModel.token_required
     def post(current_user, self):
-        if not current_user.admin : return abort(403)
+        if not current_user.admin :
+            raise ObjectForbidden('El usuario no posee los permisos suficientes para este registro, contacte a soporte')
         data = request.get_json()
         rating_dict = rating_schema.load(data)
         new_rating = RatingModel(rating = rating_dict['rating'],
@@ -29,7 +31,8 @@ class RatingResource(Resource):
         return {'icon':'success', 'msg': 'Registro Exitoso' ,'record': resp}, 201
     @UserModel.token_required
     def put(current_user, self, id):
-        if not current_user.admin : return abort(403)
+        if not current_user.admin :
+            raise ObjectForbidden('El usuario no posee los permisos suficientes para esta modificación, contacte a soporte')
         data = request.get_json()
         rating_dict = rating_schema.load(data)
         RatingModel.update(id, rating_dict['rating'], rating_dict['description'], rating_dict['picture'])
@@ -38,7 +41,8 @@ class RatingResource(Resource):
         return {'icon':'success', 'msg': 'Actualización Exitosa' ,'record': resp}, 201
     @UserModel.token_required
     def delete(current_user, self, id):
-        if not current_user.admin : return abort(403)
+        if not current_user.admin :
+            raise ObjectForbidden('El usuario no posee los permisos suficientes para esta eliminación, contacte a soporte')
         delete_record = RatingModel.get_by_id(id)
         delete_record.delete()
         return {'icon':'warning', 'msg': 'Eliminación Exitosa'}, 201
@@ -52,7 +56,8 @@ class GenderListResource(Resource):
 class GenderResource(Resource):
     @UserModel.token_required
     def post(current_user, self):
-        if not current_user.admin : return abort(403)
+        if not current_user.admin :
+            raise ObjectForbidden('El usuario no posee los permisos suficientes para este registro, contacte a soporte')
         data = request.get_json()
         gender_dict = gender_schema.load(data)
         new_gender = GenderModel(gender = gender_dict['gender'],
@@ -63,7 +68,8 @@ class GenderResource(Resource):
         return {'icon':'success', 'msg': 'Registro Exitoso' ,'record': resp}, 201
     @UserModel.token_required
     def put(current_user, self, id):
-        if not current_user.admin : return abort(403)
+        if not current_user.admin :
+            raise ObjectForbidden('El usuario no posee los permisos suficientes para esta modificación, contacte a soporte')
         data = request.get_json()
         gender_dict = gender_schema.load(data)
         GenderModel.update(id, gender_dict['gender'], gender_dict['description'], gender_dict['picture'])
@@ -72,7 +78,8 @@ class GenderResource(Resource):
         return {'icon':'success', 'msg': 'Actualización Exitosa' ,'record': resp}, 201
     @UserModel.token_required
     def delete(current_user, self, id):
-        if not current_user.admin : return abort(403)
+        if not current_user.admin :
+            raise ObjectForbidden('El usuario no posee los permisos suficientes para esta eliminación, contacte a soporte')
         delete_record = GenderModel.get_by_id(id)
         delete_record.delete()
         return {'icon':'warning', 'msg': 'Eliminación Exitosa'}, 201
@@ -91,14 +98,20 @@ class MovieListResource(Resource):
         next = False
         if not key in ['title','gender']: # key is year or rating
             movies = FilmModel.paginate_filter(data['page'], **kwargs)
-            if movies.has_next: next = True
-            if movies.has_prev: prev = True
-            movies = movies.items
+            if not movies is None:
+                if movies.has_next: next = True
+                if movies.has_prev: prev = True
+                movies = movies.items
+            else:
+                raise ObjectNotFound('Recursos no encontrados')
         elif 'title' in key:
             movies = FilmModel.query.filter(FilmModel.title.like(f"%{data[key]}%")).paginate(page=data['page'], per_page=20, error_out=False)
-            if movies.has_next: next = True
-            if movies.has_prev: prev = True
-            movies = movies.items
+            if not movies is None:
+                if movies.has_next: next = True
+                if movies.has_prev: prev = True
+                movies = movies.items
+            else:
+                raise ObjectNotFound('Recurso no encontrado')
         else:
             list_movies = db.session.query(GenderFilmModel).filter(GenderFilmModel.c.gender==data[key]).paginate(page=data['page'], per_page=20, error_out=False)
             if list_movies.has_next: next = True
@@ -106,6 +119,8 @@ class MovieListResource(Resource):
             for film in list_movies.items:
                 movie = FilmModel.get_by_id(film.film)
                 movies.append(movie)
+            if len(movies) == 0:
+                raise ObjectNotFound('Recursos no encontrados')
         resp = movie_schema.dump(movies, many=True)
         return {'movies':resp, 'preview': prev, 'next': next}, 201
 
@@ -113,6 +128,8 @@ class MovieResource(Resource):
     @UserModel.token_required
     def get(current_user, self):
         myMovies = FilmModel.simple_filter(useradd=current_user.id)
+        if myMovies is None:
+            raise ObjectNotFound('Recursos no encontrados')
         resp = movie_schema.dump(myMovies, many=True)
         return resp, 201
     @UserModel.token_required
@@ -133,7 +150,8 @@ class MovieResource(Resource):
     @UserModel.token_required
     def put(current_user, self, id):
         movie = FilmModel.get_by_id(id)
-        if not movie.useradd == current_user.id : return abort(403)
+        if not movie.useradd == current_user.id or not current_user.admin:
+            raise ObjectForbidden('El usuario no posee los permisos suficientes para esta modificación, contacte a soporte')
         data = request.get_json()
         movie_dict = movie_schema.load(data)
         FilmModel.update(id, movie_dict['title'], movie_dict['rating'], movie_dict['year'],
@@ -149,7 +167,8 @@ class MovieResource(Resource):
     @UserModel.token_required
     def delete(current_user, self, id):
         movie = FilmModel.get_by_id(id)
-        if not movie.useradd == current_user.id : return abort(403)
+        if not movie.useradd == current_user.id or not current_user.admin:
+            raise ObjectForbidden('El usuario no posee los permisos suficientes para esta eliminación, contacte a soporte')
         movie.delete()
         db.session.execute(f"DELETE FROM generos_en_peliculas WHERE film ={id}") # Delete old movie
         return {'icon':'warning', 'msg': 'Eliminación Exitosa'}, 201

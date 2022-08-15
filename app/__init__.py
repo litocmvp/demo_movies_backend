@@ -1,7 +1,7 @@
 from flask import Flask, jsonify
 from flask_restful import Api
 from flask_cors import CORS
-from app.common.error_handling import ObjectNotFound, AppErrorBaseClass
+from app.common.error_handling import ObjectNotFound, AppErrorBaseClass, ObjectForbidden, ObjectUnauthorized
 from app.common.mail import mail
 from app.movies.api_v1_0 import api_v1_0_bp
 from app.ext import ma, migrate
@@ -65,3 +65,10 @@ def register_error_handlers(app):
 	def handle_object_not_found_error(e):
 		return jsonify({'msg': str(e)}), 404
 
+	@app.errorhandler(ObjectForbidden)
+	def handle_object_forbidden(e):
+		return jsonify({'msg': str(e)}), 403
+
+	@app.errorhandler(ObjectUnauthorized)
+	def handle_object_unauthorized(e):
+		return jsonify({'msg': str(e)}), 401

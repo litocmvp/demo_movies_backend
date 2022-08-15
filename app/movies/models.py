@@ -1,4 +1,4 @@
-from flask import request, jsonify, current_app, abort
+from flask import request, current_app
 from sqlalchemy.exc import IntegrityError
 from werkzeug.security import generate_password_hash, check_password_hash
 from app.db import db, BaseModelMixin
@@ -7,6 +7,7 @@ import jwt
 from functools import wraps
 from datetime import datetime, timedelta
 from random import randint
+from ..common.error_handling import ObjectNotFound, ObjectUnauthorized
 
 class UserModel(db.Model, BaseModelMixin):
 	""" Modelo para la tabla usuarios """
@@ -69,15 +70,13 @@ class UserModel(db.Model, BaseModelMixin):
 				token = request.headers['Authorization'][7:]
 
 			if not token:
-				return abort(403)
-				return jsonify({'icon':'warning', 'msg': 'Falta un token valido'})
+				raise ObjectNotFound('Token de autentificación no encontrado')
 
 			try:
 				data = jwt.decode(token, current_app.config["SECRET_KEY"], algorithms=["HS256"])
 				current_user = UserModel.query.filter_by(public_id=data['public_id']).first()
 			except:
-				return abort(403)
-				return jsonify({'icon':'warning', 'msg': 'Token invalido'})
+				raise ObjectUnauthorized('Token de autentificación invalido, contacte a soporte')
 
 			return f(current_user, *args, **kwargs)
 		return decorator

@@ -2,10 +2,10 @@ import jwt, datetime
 from . import api
 from ..schemas import UserSchema
 from ...models import UserModel, ResetPwdModel
-from ....common.error_handling import ObjectNotFound
+from ....common.error_handling import ObjectNotFound, ObjectUnauthorized
 from ....common.mail import send_email
 from flask import request, current_app
-from flask_restful import Resource, abort
+from flask_restful import Resource
 
 user_schema = UserSchema()
 
@@ -91,7 +91,7 @@ class UserResource(Resource):
                 else:
                     return {'msg': 'Usuario no encontrado', 'icon': 'error', 'auth': False}, 200
             else:
-                return abort(403)
+                raise ObjectUnauthorized('Autentificación del usuario no verificada')
 
 
 class Auth(Resource):
