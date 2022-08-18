@@ -98,7 +98,7 @@ class MovieListResource(Resource):
         next = False
         if not key in ['title','gender']: # key is year or rating
             movies = FilmModel.paginate_filter(data['page'], **kwargs)
-            if not movies is None:
+            if len(movies.items) > 0:
                 if movies.has_next: next = True
                 if movies.has_prev: prev = True
                 movies = movies.items
@@ -106,7 +106,7 @@ class MovieListResource(Resource):
                 raise ObjectNotFound('Recursos no encontrados')
         elif 'title' in key:
             movies = FilmModel.query.filter(FilmModel.title.like(f"%{data[key]}%")).paginate(page=data['page'], per_page=20, error_out=False)
-            if not movies is None:
+            if len(movies.items) > 0:
                 if movies.has_next: next = True
                 if movies.has_prev: prev = True
                 movies = movies.items
