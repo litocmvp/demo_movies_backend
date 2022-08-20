@@ -131,7 +131,12 @@ class MovieResource(Resource):
         if myMovies is None:
             raise ObjectNotFound('Recursos no encontrados')
         resp = movie_schema.dump(myMovies, many=True)
-        return resp, 201
+        resp2 = []
+        if current_user.admin:
+            moviesByOtherAuthors = FilmModel.query.filter(FilmModel.useradd != current_user.id).all()
+            if not moviesByOtherAuthors is None:
+                resp2 = movie_schema.dump(moviesByOtherAuthors, many=True)
+        return {'myMovies': resp, 'otherMovies': resp2}, 201
     @UserModel.token_required
     def post(current_user, self):
         data = request.get_json()
@@ -150,7 +155,7 @@ class MovieResource(Resource):
     @UserModel.token_required
     def put(current_user, self, id):
         movie = FilmModel.get_by_id(id)
-        if not movie.useradd == current_user.id or not current_user.admin:
+        if not (movie.useradd == current_user.id or current_user.admin):
             raise ObjectForbidden('El usuario no posee los permisos suficientes para esta modificación, contacte a soporte')
         data = request.get_json()
         movie_dict = movie_schema.load(data)
@@ -167,10 +172,11 @@ class MovieResource(Resource):
     @UserModel.token_required
     def delete(current_user, self, id):
         movie = FilmModel.get_by_id(id)
-        if not movie.useradd == current_user.id or not current_user.admin:
+        if not (movie.useradd == current_user.id or current_user.admin):
             raise ObjectForbidden('El usuario no posee los permisos suficientes para esta eliminación, contacte a soporte')
         movie.delete()
         db.session.execute(f"DELETE FROM generos_en_peliculas WHERE film ={id}") # Delete old movie
+        db.session.commit()
         return {'icon':'warning', 'msg': 'Eliminación Exitosa'}, 201
 
 api.add_resource(RatingListResource, '/api/v1.0/cinema/ratings')
